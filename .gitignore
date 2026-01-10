@@ -1,0 +1,36 @@
+# --- Python Boilerplate ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+
+# --- Jupyter Notebooks ---
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# --- Project Specific Data (IMPORTANT) ---
+# Ignore the 1000 generated client CSVs to avoid bloating the repo
+data/client_*.csv
+data/raw/*.csv
+
+# ...But keep the folders themselves (so others know where to put data)
+!data/.gitkeep
+!data/raw/.gitkeep
+
+# --- Simulation Outputs ---
+# Ignore logs, saved models, and simulation dumps
+outputs/
+*.log
+flower_simulation_results/
+
+# --- IDE Settings ---
+.vscode/
+.idea/
+*.swp
+
+# --- Mac OS Junk ---
+.DS_Store

@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "malware-detection-tools"
+version = "1.0.0"
+description = "Federated Learning for Malware Detection"
+dependencies = [
+    "flwr[simulation]>=1.13.0",
+    "torch",
+    "torchvision",
+    "pandas",
+    "numpy",
+    "scikit-learn"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.flwr.app]
+publisher = "admin"
+
+[tool.flwr.app.components]
+# This points Flower to your server and client objects in the src folder
+serverapp = "src.server:app"
+clientapp = "src.client:app"
+
+[tool.flwr.federations.local-simulation]
+# Default values for simulation (can be overridden by your main.py)
+options.num-supernodes = 1000
+options.backend.client-resources.num-cpus = 1.0
+options.backend.client-resources.num-gpus = 0.0
