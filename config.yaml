@@ -1,0 +1,18 @@
+simulation:
+  rounds: 10
+  strategy: "fedavg"
+  model: "cnn_lstm"
+  data_dir: "data/"
+  num_clients: 100 
+
+resources:
+  total_gpus: 1.0
+  total_cpus: 4.0
+  gpu_per_client: 0.0
+  cpu_per_client: 1.0
+
+dynamic_schedule:
+  - round_start: 1
+    active_clients: 2
+  - round_start: 4
+    active_clients: 5
