@@ -9,17 +9,17 @@ A modular, command-line based **Federated Learning (FL) simulation framework** d
 ## 🌟 Key Features
 
 * **Scalable Simulation:** Runs hundreds of clients efficiently using Ray backend with dynamic CPU/GPU resource allocation.
-* **Modular Architecture:** Easily swap models (`CNN-LSTM`, `MLP`) and strategies (`FedAvg`, `FedProx`, `FedNova`) via configuration.
+* **YAML-Based Configuration:** Centralized control over model, strategy, and resources via `config.yaml`.
+* **Modular Architecture:** Easily swap models (`CNN-LSTM`, `MLP`) and strategies (`FedAvg`, `FedProx`, `FedNova`).
 * **Non-IID Data Generation:** Includes tools to simulate real-world data skew (feature and quantity skew) across clients.
-* **Advanced Strategies:**
-    * **FedNova:** Normalized averaging for clients with varying local steps.
-    * **Dynamic Scaling:** Custom strategy to scale from low (3 clients) to high (5+ clients) parallelism mid-simulation.
-* **Production Ready:** Uses `src/` layout, `argparse` CLI, and standard `pyproject.toml` configuration.
+* **Custom Dynamic Schedules:** Define custom scaling logic in YAML (e.g., "Start with 2 clients, scale to 10 after round 5") to simulate network variability or warm-up phases.
+* **Production Ready:** Uses `src/` layout, `argparse` CLI with short-flags, and standard `pyproject.toml` configuration.
 
 ## 📂 Project Structure
 
 ```text
 malware-detection-tools/
+├── config.yaml              # Main simulation configuration & dynamic schedule
 ├── data/                    # Holds generated client CSVs (Ignored by Git)
 ├── outputs/                 # Simulation logs and results
 ├── tools/
@@ -29,10 +29,7 @@ malware-detection-tools/
 │   ├── server.py            # Server & Aggregation Logic
 │   ├── dataset.py           # Data Loading & Preprocessing
 │   ├── models/              # Neural Network Architectures
-│   │   └── cnn_lstm.py      # CNN-LSTM Implementation
-│   └── strategies/          # Custom FL Strategies
-│       ├── fednova.py       # FedNova Implementation
-│       └── dynamic.py       # Dynamic Resource Scaling
+│   └── strategies/          # Custom FL Strategies (FedNova, Dynamic)
 ├── main.py                  # CLI Entry Point
 └── pyproject.toml           # Flower Simulation Config
 ```
@@ -41,14 +38,14 @@ malware-detection-tools/
 
    1. Clone the repository:
 ```bash
-git clone [https://github.com/your-username/malware-detection-tools.git](https://github.com/your-username/malware-detection-tools.git)
+git clone https://github.com/mikcamz/fd_ids_framework.git
 cd malware-detection-tools
 ```
 Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
-Note: Requires flwr[simulation], torch, pandas, numpy, scikit-learn.
+Note: Requires flwr[simulation], torch, pandas, numpy, scikit-learn, pyyaml.
 
 ## Data Preparation
 
@@ -64,22 +61,32 @@ This creates files data/client_0.csv to data/client_99.csv.
 
 ## Usage
 
-Run the simulation using main.py. You can configure the model, strategy, and parallelism via command-line arguments.
-1. Basic Run (FedAvg)
-```Bash
-python main.py --model cnn_lstm --strategy fedavg --parallel_clients 5 --rounds 10
-```
+1. Run using Config File (Recommended)
 
-2. Using FedNova (Robust Aggregation)
-Ideal for scenarios where clients perform different amounts of work.
-```Bash
-python main.py --model cnn_lstm --strategy fednova --parallel_clients 5 --rounds 20
+Edit config.yaml to set your desired rounds, strategy, and schedule, then simply run:
+```bash
+python main.py
 ```
+2. CLI Overrides
 
-3. Dynamic Parallelism (Custom Strategy)
-Starts with 3 clients to warm up, then scales to 5 clients after round 3.
-```Bash
-python main.py --strategy dynamic --rounds 10
+You can override specific parameters without changing the config file:
+Example: Quick Test Run 5 rounds with FedNova, using a total pool of 50 clients:
+```bash
+python main.py -r 5 -s fednova -n 50 -d data/
+```
+3. Edit custom parallel scheduling in `config.yaml`:
+```yaml
+resources:
+  total_gpus: 1.0
+  total_cpus: 4.0
+  gpu_per_client: 0.0
+  cpu_per_client: 1.0
+
+dynamic_schedule:
+  - round_start: 1       # At round 1, 2 client will run in parallel
+    active_clients: 2
+  - round_start: 4       # Starting from round 4, 5 client will run in parallel
+    active_clients: 5
 ```
 
 ## Customization
@@ -87,12 +94,12 @@ python main.py --strategy dynamic --rounds 10
 ### Adding a New Model
 - Create `src/models/my_model.py` defining your PyTorch class.
 - Register it in `src/models/__init__.py`.
-- Run with `--model my_model`.
+- Run with `-m my_model`.
 
 ### Adding a New Strategy
 - Create `src/strategies/my_strategy.py`.
 - Register it in `src/strategies/__init__.py`.
-- Run with `--strategy my_strategy`.
+- Run with `-s my_strategy`.
 
 ## Citation
 

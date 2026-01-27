@@ -1,65 +1,69 @@
 import argparse
-import subprocess
-import sys
 import os
+import sys
+import yaml
+import json
+import subprocess
 
-def run_simulation(args):
-    """
-    Constructs the Flower simulation command based on arguments.
-    """
-    print(f"--- Starting Malware Detection FL Simulation ---")
-    print(f"Model: {args.model}")
-    print(f"Clients: {args.num_clients} total")
-    print(f"Rounds: {args.rounds}")
-    print(f"Parallelism: {args.parallel_clients} clients (Limit)")
-    
-    # 1. Update Resource Config dynamically (Pyproject-style override)
-    # Flower 1.13+ relies heavily on pyproject.toml for 'flwr run'.
-    # However, for a CLI tool, we can also use `flwr.simulation.start_simulation` in python
-    # OR we can generate a temporary pyproject.toml.
-    
-    # For simplicity and robustness with your existing knowledge, 
-    # we will use the 'flwr run' command but we need to ensure the config matches.
-    # A pro tip: We can calculate resource allocation here and pass it.
-    
-    # Calculate CPU/GPU per client to force parallelism limit
-    # Assuming 4 CPUs available (standard Kaggle/Laptop)
-    total_cpus = 4.0 
-    cpu_per_client = total_cpus / args.parallel_clients
-    
-    # Construct the command
-    # We pass arguments via environment variables or writing a temporary config is best.
-    # Here, we will just run the app as defined.
-    
-    # NOTE: To truly pass these CLI args into the 'client_fn' and 'server_fn' 
-    # inside the simulation, usually requires a config file or env vars 
-    # because 'flwr run' isolates the environment.
-    
-    os.environ["FLWR_STRATEGY_NAME"] = args.strategy  
-    os.environ["FLWR_ROUNDS"] = str(args.rounds)      
-    os.environ["FLWR_MODEL_NAME"] = args.model
-    os.environ["DATA_DIR"] = args.data_dir
-    os.environ["FLWR_FIT_CLIENTS"] = str(args.parallel_clients)    
+def load_config(path="config.yaml"):
+    if not os.path.exists(path):
+        print(f"Config file {path} not found. Using defaults.")
+        return {}
+    with open(path, "r") as f:
+        return yaml.safe_load(f)
 
-    # We can modify the pyproject.toml on the fly or use the python API.
-    # Let's use the subprocess command you are familiar with, 
-    # but we will rely on the files we created in src/
+def run_simulation():
+    # 1. Load Config
+    config = load_config("config.yaml")
+    sim_config = config.get('simulation', {})
+    res_config = config.get('resources', {})
+    schedule_config = config.get('dynamic_schedule', [])
     
-    cmd = ["flwr", "run", ".", "local-simulation"]
+    # 2. CLI Args
+    parser = argparse.ArgumentParser(description="Run FL Simulation")
+    parser.add_argument("-r", "--rounds", type=int, default=None, help="Number of FL rounds")
+    parser.add_argument("-s", "--strategy", type=str, default=None, help="FL Strategy (fedavg, fednova, etc.)")
+    parser.add_argument("-m", "--model", type=str, default=None, help="Model architecture (cnn_lstm, etc.)")
+    parser.add_argument("-n", "--num_clients", type=int, default=None, help="Total number of clients in the pool")
+    # parser.add_argument("-c", "--clients_overwrite", type=int, default=None, help="Force specific number of active clients")
+    parser.add_argument("-d", "--data_dir", type=str, default=None, help="Path to client datasets")
+    args, unknown = parser.parse_known_args() # Use parse_known_args to be safe
+
+    # 3. Resolve Values
+    num_rounds = args.rounds if args.rounds else sim_config.get('rounds', 5)
     
+    # Resolve Total Clients (CLI > Config > Default)
+    num_clients = args.num_clients if args.num_clients else sim_config.get('num_clients', 1000)
+    
+    gpu_per_client = res_config.get('gpu_per_client', 0.0)
+    cpu_per_client = res_config.get('cpu_per_client', 1.0)
+    
+    # ... (rest of environment setup) ...
+    env = os.environ.copy()
+    # (Set your env vars here like FLWR_ROUNDS, etc.)
+
+    fed_config_str = (
+        f"options.num-supernodes={num_clients} "
+        f"options.backend.client-resources.num-cpus={cpu_per_client} "
+        f"options.backend.client-resources.num-gpus={gpu_per_client}"
+    )
+
+    # 4. Build Command
+    cmd = [
+        "flwr", "run", ".", "local-simulation",
+        
+        # Override Resources
+        "--federation-config", fed_config_str,
+    ]
+
+    print(f"--- Configuration ---")
+    print(f"Total Clients: {num_clients}")
     print(f"Executing: {' '.join(cmd)}")
-    subprocess.run(cmd)
+    
+    # ... (subprocess execution) ...
+    python_bin_dir = os.path.dirname(sys.executable)
+    env["PATH"] = python_bin_dir + os.pathsep + env.get("PATH", "")
+    subprocess.run(cmd, env=env, check=True)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Flower FL Malware Detection CLI")
-    
-    parser.add_argument("--model", type=str, default="cnn_lstm", help="Model architecture (cnn_lstm, mlp)")
-    parser.add_argument("--strategy", type=str, default="fedavg", help="Aggregation strategy")
-    parser.add_argument("--num_clients", type=int, default=1000, help="Total clients in pool")
-    parser.add_argument("--parallel_clients", type=int, default=5, help="Max clients running in parallel")
-    parser.add_argument("--rounds", type=int, default=5, help="Number of FL rounds")
-    parser.add_argument("--data_dir", type=str, default="data/", help="Path to client csv files")
-    
-    args = parser.parse_args()
-    
-    run_simulation(args)
+    run_simulation()

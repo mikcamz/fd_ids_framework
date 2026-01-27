@@ -1,41 +1,24 @@
 from flwr.server.strategy import FedAvg, FedProx, FedAdam
-from .dynamic import DynamicLayerStrategy
 from .fednova import FedNova
+from .dynamic import DynamicFedAvg, DynamicFedNova
 
 def get_strategy(strategy_name: str, **kwargs):
-    """
-    Factory to get the requested strategy.
-    """
     name = strategy_name.lower()
     
-    # --- FIX: EXTRACT DYNAMIC ARGS ---
-    # We remove these from kwargs so they don't break FedAvg/FedNova/etc.
-    start_clients = kwargs.pop('start_clients', 2)
-    end_clients = kwargs.pop('end_clients', 5)
-    switch_round = kwargs.pop('switch_round', 2)
+    # Extract the schedule string
+    schedule_json = kwargs.pop('schedule_json', "[]")
     
-    if name == "dynamic":
-        # Pass them explicitly to Dynamic strategy
-        return DynamicLayerStrategy(
-            start_clients=start_clients,
-            end_clients=end_clients,
-            switch_round=switch_round,
-            **kwargs
-        )
-        
+    # If using standard strategies, we check if we should "upgrade" them to Dynamic
+    # We assume we always want dynamic logic if the user provided a schedule in config.
+    
+    if name == "fedavg":
+        # Wrap FedAvg with Dynamic Logic
+        return DynamicFedAvg(schedule_json=schedule_json, **kwargs)
+
     elif name == "fednova":
-        return FedNova(**kwargs)
-        
-    elif name == "fedavg":
-        return FedAvg(**kwargs)
-        
-    elif name == "fedprox":
-        if 'proximal_mu' not in kwargs:
-            kwargs['proximal_mu'] = 0.1
-        return FedProx(**kwargs)
-        
-    elif name == "fedadam":
-        return FedAdam(**kwargs)
+        # Wrap FedNova with Dynamic Logic
+        return DynamicFedNova(schedule_json=schedule_json, **kwargs)
         
     else:
-        raise ValueError(f"Strategy '{strategy_name}' not found in src/strategies/")
+        # Fallback for simple testing
+        return FedAvg(**kwargs)

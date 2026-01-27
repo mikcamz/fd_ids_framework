@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "malware-detection-tools"
+name = "IDS-FD"
 version = "1.0.0"
-description = "Federated Learning for Malware Detection"
+description = "Federated Learning for IDS"
 dependencies = [
     "flwr[simulation]>=1.13.0",
     "torch",
@@ -22,12 +22,10 @@ packages = ["src"]
 publisher = "admin"
 
 [tool.flwr.app.components]
-# This points Flower to your server and client objects in the src folder
 serverapp = "src.server:app"
 clientapp = "src.client:app"
 
 [tool.flwr.federations.local-simulation]
-# Default values for simulation (can be overridden by your main.py)
-options.num-supernodes = 1000
+options.num-supernodes = 10
 options.backend.client-resources.num-cpus = 1.0
 options.backend.client-resources.num-gpus = 0.0
