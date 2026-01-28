@@ -25,7 +25,7 @@ def run_simulation():
     parser.add_argument("-s", "--strategy", type=str, default=None, help="FL Strategy (fedavg, fednova, etc.)")
     parser.add_argument("-m", "--model", type=str, default=None, help="Model architecture (cnn_lstm, etc.)")
     parser.add_argument("-n", "--num_clients", type=int, default=None, help="Total number of clients in the pool")
-    # parser.add_argument("-c", "--clients_overwrite", type=int, default=None, help="Force specific number of active clients")
+    parser.add_argument("-c", "--clients_overwrite", type=int, default=None, help="Force specific number of active clients")
     parser.add_argument("-d", "--data_dir", type=str, default=None, help="Path to client datasets")
     args, unknown = parser.parse_known_args() # Use parse_known_args to be safe
 
@@ -34,13 +34,22 @@ def run_simulation():
     
     # Resolve Total Clients (CLI > Config > Default)
     num_clients = args.num_clients if args.num_clients else sim_config.get('num_clients', 1000)
-    
+    model_name = args.model if args.model else sim_config.get('model', 'cnn_lstm')
     gpu_per_client = res_config.get('gpu_per_client', 0.0)
     cpu_per_client = res_config.get('cpu_per_client', 1.0)
-    
-    # ... (rest of environment setup) ...
+    data_dir = args.data_dir if args.data_dir else sim_config.get('data_dir', 'data/')
+    strategy_name = args.strategy if args.strategy else sim_config.get('strategy', 'fedavg')
+    if args.clients_overwrite:
+        schedule = [{"round_start": 1, "active_clients": args.clients_overwrite}]
+    else:
+        schedule = schedule_config
+
     env = os.environ.copy()
-    # (Set your env vars here like FLWR_ROUNDS, etc.)
+    env["FLWR_MODEL_NAME"] = model_name
+    env["FLWR_STRATEGY_NAME"] = strategy_name
+    env["FLWR_ROUNDS"] = str(num_rounds)
+    env["DATA_DIR"] = data_dir
+    env["DYNAMIC_SCHEDULE"] = json.dumps(schedule)
 
     fed_config_str = (
         f"options.num-supernodes={num_clients} "

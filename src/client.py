@@ -1,5 +1,6 @@
 import os
 import torch
+import numpy as np
 from flwr.client import NumPyClient
 from flwr.clientapp import ClientApp
 from flwr.common import Context

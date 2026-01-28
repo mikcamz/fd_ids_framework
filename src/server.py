@@ -1,10 +1,28 @@
 import os
 import json
+from typing import List, Tuple
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-from flwr.common import Context, ndarrays_to_parameters
+from flwr.common import Context, ndarrays_to_parameters, Metrics
 
 from .models import get_model
 from .strategies import get_strategy
+
+def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
+    """
+    Aggregates metrics (accuracy, f1) from multiple clients using a weighted average.
+    """
+    # Multiply accuracy/f1 of each client by number of examples used
+    accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
+    f1_scores = [num_examples * m["f1_score"] for num_examples, m in metrics]
+    examples = [num_examples for num_examples, _ in metrics]
+
+    total_examples = sum(examples)
+    
+    # Return the aggregated dictionary
+    return {
+        "accuracy": sum(accuracies) / total_examples,
+        "f1_score": sum(f1_scores) / total_examples,
+    }
 
 def server_fn(context: Context):
     # 1. Read Env
@@ -23,7 +41,8 @@ def server_fn(context: Context):
         strategy_name,
         initial_parameters=initial_parameters,
         schedule_json=schedule_json, 
-        min_available_clients=2      
+        min_available_clients=2,
+        evaluate_metrics_aggregation_fn=weighted_average,
     )
 
     config = ServerConfig(num_rounds=num_rounds)
