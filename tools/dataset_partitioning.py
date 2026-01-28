@@ -112,9 +112,9 @@ if __name__ == "__main__":
     
     # Default points to where you might mount the Kaggle dataset on your local PC
     # Or just use a folder where you put the big CSVs
-    parser.add_argument("--source", type=str, default="./raw_data", help="Folder containing raw merged CSVs")
-    parser.add_argument("--output", type=str, default="./data", help="Output folder for client_x.csv")
-    parser.add_argument("--num_clients", type=int, default=100, help="Number of clients to simulate")
+    parser.add_argument("-s", "--source", type=str, default="./raw_data", help="Folder containing raw merged CSVs")
+    parser.add_argument("-o", "--output", type=str, default="./data", help="Output folder for client_x.csv")
+    parser.add_argument("-n", "--num_clients", type=int, default=100, help="Number of clients to simulate")
     
     args = parser.parse_args()
     

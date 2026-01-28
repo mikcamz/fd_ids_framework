@@ -5,7 +5,10 @@ from flwr.common import Parameters, FitIns, log
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedAvg
+
 from .fednova import FedNova
+from .fedprox import FedProx
+
 
 class DynamicLogicMixin:
     """
@@ -49,3 +52,4 @@ class DynamicLogicMixin:
 # Combined Classes
 class DynamicFedAvg(DynamicLogicMixin, FedAvg): pass
 class DynamicFedNova(DynamicLogicMixin, FedNova): pass
+class DynamicFedProx(DynamicLogicMixin, FedProx): pass

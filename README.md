@@ -83,9 +83,9 @@ resources:
   cpu_per_client: 1.0
 
 dynamic_schedule:
-  - round_start: 1       # At round 1, 2 client will run in parallel
+  - round_start: 1       # At round 1, 2 client will be sampled
     active_clients: 2
-  - round_start: 4       # Starting from round 4, 5 client will run in parallel
+  - round_start: 4       # Starting from round 4, 5 client will be sampled
     active_clients: 5
 ```
 

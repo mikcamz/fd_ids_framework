@@ -9,19 +9,31 @@ from .strategies import get_strategy
 
 def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     """
-    Aggregates metrics (accuracy, f1) from multiple clients using a weighted average.
+    Aggregates metrics and PRINTS them so you see them every round.
     """
-    # Multiply accuracy/f1 of each client by number of examples used
+    # Extract values
     accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
     f1_scores = [num_examples * m["f1_score"] for num_examples, m in metrics]
     examples = [num_examples for num_examples, _ in metrics]
 
     total_examples = sum(examples)
     
-    # Return the aggregated dictionary
+    # Calculate weighted averages
+    agg_accuracy = sum(accuracies) / total_examples
+    agg_f1 = sum(f1_scores) / total_examples
+    
+    # --- NEW: Print to console immediately ---
+    print(f"\n" + "="*40)
+    print(f"  ~~~ ROUND METRICS AGGREGATION ~~~")
+    print(f"  Clients Reported: {len(metrics)}")
+    print(f"  Avg Accuracy:     {agg_accuracy:.4f} ({agg_accuracy*100:.2f}%)")
+    print(f"  Avg F1-Score:     {agg_f1:.4f}")
+    print(f"="*40 + "\n")
+    # ----------------------------------------
+
     return {
-        "accuracy": sum(accuracies) / total_examples,
-        "f1_score": sum(f1_scores) / total_examples,
+        "accuracy": agg_accuracy,
+        "f1_score": agg_f1,
     }
 
 def server_fn(context: Context):

@@ -1,6 +1,6 @@
 flwr[simulation]>=1.13.0
 torch
 pandas==2.3.3
-numpy==2.4.0
+numpy
 scikit-learn
 pyyaml

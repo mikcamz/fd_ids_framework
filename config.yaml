@@ -9,7 +9,7 @@ resources:
   total_gpus: 1.0
   total_cpus: 4.0
   gpu_per_client: 0.0
-  cpu_per_client: 1.0
+  cpu_per_client: 0.5
 
 dynamic_schedule:
   - round_start: 1
