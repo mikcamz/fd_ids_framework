@@ -42,7 +42,7 @@ class DynamicLogicMixin:
         self.min_evaluate_clients = current_clients
         self.min_available_clients = current_clients
         self.fraction_fit = 0.0
-        self.fraction_evaluate = 0.0
+        self.fraction_evaluate = 0.00001
         
         return super().configure_fit(server_round, parameters, client_manager)
 

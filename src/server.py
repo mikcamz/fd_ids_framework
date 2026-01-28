@@ -43,6 +43,7 @@ def server_fn(context: Context):
         schedule_json=schedule_json, 
         min_available_clients=2,
         evaluate_metrics_aggregation_fn=weighted_average,
+        fit_metrics_aggregation_fn=weighted_average,
     )
 
     config = ServerConfig(num_rounds=num_rounds)
